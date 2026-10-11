@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": ".test-build",
+    "rootDir": "."
+  },
+  "include": [
+    "tests/**/*.ts",
+    "src/lib/game/engine.ts",
+    "src/lib/game/stack.ts",
+    "src/lib/game/scoring.ts"
+  ]
+}
