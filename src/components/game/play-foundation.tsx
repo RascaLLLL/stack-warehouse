@@ -83,7 +83,7 @@ export function PlayFoundation() {
                 <input
                   id="nim"
                   name="nim"
-                  placeholder="Contoh: 24001001"
+                  placeholder="Contoh: 1025886213"
                   required
                   minLength={3}
                   maxLength={24}
@@ -92,13 +92,13 @@ export function PlayFoundation() {
                   aria-describedby="nim-help"
                 />
                 <p className="field-hint" id="nim-help">
-                  3–24 karakter: huruf, angka, titik, atau tanda hubung.
+                  3–15 karakter.
                 </p>
                 <label htmlFor="className">Kelas</label>
                 <input
                   id="className"
                   name="className"
-                  placeholder="Contoh: TI-2A"
+                  placeholder="Contoh: 25-01"
                   required
                   maxLength={40}
                   autoComplete="off"
