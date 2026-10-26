@@ -18,7 +18,8 @@ import { createResultPng, downloadPng } from "@/lib/export/result-png";
 export function ResultView() {
   const ready = useHydrated(),
     player = useGameStore((s) => s.player),
-    saved = useGameStore((s) => s.savedSession);
+    saved = useGameStore((s) => s.savedSession),
+    legacyResult = useGameStore((s) => s.result);
   const report = useMemo(() => {
     try {
       return saved && player ? createResultPayload(saved, player) : null;
@@ -64,11 +65,33 @@ export function ResultView() {
         <div className="eyebrow">POS EVALUASI</div>
         <h1 className="page-title pixel-heading">Laporan shift.</h1>
         <section className="pixel-panel engine-panel">
-          <h2>Belum ada sesi selesai.</h2>
-          <p>
-            Selesaikan permainan sampai victory atau game over untuk membuat
-            kartu hasil lengkap dari jurnal sesi tersimpan.
-          </p>
+          {legacyResult ? (
+            <>
+              <h2>Arsip hasil Stack lama</h2>
+              <p>
+                Nama: {legacyResult.player.name} · NIM:{" "}
+                {legacyResult.player.nim} · Kelas:{" "}
+                {legacyResult.player.className}
+              </p>
+              <p>
+                Skor: {legacyResult.score} · Ruang selesai:{" "}
+                {legacyResult.completedStages}/10 · Selesai:{" "}
+                {legacyResult.completedAt}
+              </p>
+              <p>
+                Format 10 ruang lama tidak memiliki jurnal Queue untuk laporan
+                20 ruang. Mulai sesi baru untuk membuat PNG V3.
+              </p>
+            </>
+          ) : (
+            <>
+              <h2>Belum ada sesi selesai.</h2>
+              <p>
+                Selesaikan permainan sampai menang atau nyawa habis untuk
+                membuat kartu hasil lengkap dari jurnal sesi tersimpan.
+              </p>
+            </>
+          )}
           <ButtonLink href="/play">
             Kembali ke gudang <ArrowRight size={18} />
           </ButtonLink>
@@ -82,13 +105,17 @@ export function ResultView() {
     ["NIM", r.player.nim],
     ["Kelas", r.player.className],
     ["Skor akhir", String(r.score)],
+    ["Skor Stack", String(r.stackScore)],
+    ["Skor Queue", String(r.queueScore)],
+    ["Benar Stack", `${r.stackCorrect}/10`],
+    ["Benar Queue", `${r.queueCorrect}/10`],
     ["Jawaban benar", String(r.correctAnswers)],
     ["Jawaban salah", String(r.incorrectAnswers)],
     ["Timeout", String(r.timeoutCount)],
     ["Petunjuk dipakai", String(r.hintUsage)],
     [
       "Ruang selesai",
-      `${r.completedRooms.length}/10 (${r.completedRooms.join(", ") || "—"})`,
+      `${r.completedRooms.length}/20 (${r.completedRooms.join(", ") || "—"})`,
     ],
     ["Sisa nyawa", `${r.remainingLives}/3`],
     ["Akurasi", `${r.accuracy}%`],
@@ -105,8 +132,8 @@ export function ResultView() {
     [
       "Status",
       r.completionStatus === "victory"
-        ? "Victory — semua ruang selesai"
-        : "Game over — nyawa habis",
+        ? "Menang — semua ruang selesai"
+        : "Permainan berakhir — nyawa habis",
     ],
   ];
   return (
@@ -139,7 +166,7 @@ export function ResultView() {
         </section>
         <section className="pixel-panel final-report-panel">
           <div className="panel-kicker">
-            MANIFEST HASIL <span>V2</span>
+            MANIFEST HASIL <span>V3</span>
           </div>
           <h2>Rincian operator</h2>
           <dl className="final-report-fields">

@@ -2,6 +2,7 @@ import { isGameResult } from "../src/lib/game/result";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { questionBank } from "../src/data/questions";
+import { queueQuestions } from "../src/data/queue-questions";
 import { stages } from "../src/data/stages";
 import { selectQuestions, BANK_VERSION } from "../src/lib/game/questions";
 import {
@@ -31,7 +32,20 @@ test("bank has 30 complete serializable questions and exactly 10 per difficulty"
   assert.equal(new Set(questionBank.map((q) => q.puzzleType)).size, 8);
   assert.equal(new Set(questionBank.map((q) => q.topic)).size, 12);
 });
-for (const q of questionBank)
+test("queue bank has at least 20 complete questions including five Modul 8 concepts", () => {
+  assert.ok(queueQuestions.length >= 20);
+  assert.equal(
+    new Set(queueQuestions.map((q) => q.id)).size,
+    queueQuestions.length,
+  );
+  assert.deepEqual(
+    queueQuestions.slice(0, 5).map((q) => q.expectedAnswer),
+    ["fifo", "tail", "nil", "nil", "max"],
+  );
+  assert.ok(queueQuestions.some((q) => q.puzzleType === "queueExecute"));
+  assert.ok(queueQuestions.some((q) => q.puzzleType === "queuePredict"));
+});
+for (const q of [...questionBank, ...queueQuestions])
   test(`${q.id}: valid mechanic, reachable answer, immutable execution`, () => {
     const before = JSON.stringify(q);
     assert.deepEqual(validateQuestion(q), []);
@@ -40,6 +54,7 @@ for (const q of questionBank)
     assert.equal(evaluated.correct, true);
     assert.equal(JSON.stringify(q), before);
     assert.ok(evaluated.stack.length <= 4);
+    assert.ok(evaluated.queueState.items.length <= 4);
     for (const step of evaluated.trace) {
       assert.ok(step.after.length <= 4);
       if (step.output === "overflow" || step.output === "underflow")
@@ -56,15 +71,22 @@ test("seeded selection always has quotas, unique IDs, all 12 curriculum topics a
   const reached = new Set<string>();
   for (let seed = 0; seed < 1000; seed++) {
     const qs = selectQuestions(seed);
-    assert.equal(qs.length, 10);
-    assert.equal(new Set(qs.map((q) => q.id)).size, 10);
-    assert.equal(qs.filter((q) => q.difficulty === "easy").length, 3);
-    assert.equal(qs.filter((q) => q.difficulty === "medium").length, 4);
-    assert.equal(qs.filter((q) => q.difficulty === "hard").length, 3);
-    assert.equal(new Set(qs.flatMap((q) => q.coverage)).size, 12);
+    assert.equal(qs.length, 20);
+    assert.equal(new Set(qs.map((q) => q.id)).size, 20);
+    for (const topic of ["stack", "queue"] as const) {
+      const selected = qs.filter((q) => q.questionTopic === topic);
+      assert.equal(selected.length, 10);
+      assert.deepEqual(
+        ["easy", "medium", "hard"].map(
+          (d) => selected.filter((q) => q.difficulty === d).length,
+        ),
+        [3, 4, 3],
+      );
+    }
+    assert.ok(new Set(qs.flatMap((q) => q.coverage)).size >= 12);
     for (const q of qs) reached.add(q.id);
   }
-  assert.equal(reached.size, 30);
+  assert.equal(reached.size, 54);
   assert.deepEqual(selectQuestions(123456), selectQuestions(123456));
   assert.notDeepEqual(selectQuestions(123456), selectQuestions(123457));
   const first = selectQuestions(1);
@@ -130,7 +152,7 @@ test("difficulty score, time bonus and exact 25% hint deduction", () => {
 test("all seeded stages integrate through victory with the exact maximum score", () => {
   for (let seed = 0; seed < 30; seed++) {
     let s = startEngine("integration", seed, 0);
-    for (let room = 1; room <= 10; room++) {
+    for (let room = 1; room <= 20; room++) {
       const q = s.selectedQuestions[room - 1];
       s = transition(s, {
         type: "submit",
@@ -140,8 +162,10 @@ test("all seeded stages integrate through victory with the exact maximum score",
       });
       assert.equal(s.answerStatus, "correct", q.id);
       assert.equal(s.operationHistory.at(-1)?.questionId, q.id);
-      if (room < 10)
+      if (room < 20) {
         s = transition(s, { type: "continue", key: attemptKey(s), now: 0 });
+        if (room === 10) s = transition(s, { type: "enterQueue", now: 0 });
+      }
     }
     assert.equal(s.gameStatus, "victory");
     assert.equal(s.score, MAX_SCORE);
@@ -169,24 +193,13 @@ test("question validator rejects incorrect answers, scores and unsupported mecha
       .length,
   );
 });
-test("ten distinct warehouse environments match the required progression", () => {
-  assert.deepEqual(
-    stages.map((s) => s.title),
-    [
-      "Receiving Dock",
-      "Storage Bay",
-      "Loading Station",
-      "Sorting Area",
-      "Conveyor Control",
-      "Inventory Room",
-      "Linked Storage",
-      "Array Storage",
-      "Maintenance Zone",
-      "Master Warehouse",
-    ],
-  );
+test("twenty warehouse environments match the required progression", () => {
+  assert.equal(stages.length, 20);
+  assert.equal(stages[0].title, "Dermaga Penerimaan");
+  assert.equal(stages[10].title, "Gerbang Logistik");
+  assert.equal(stages[19].title, "Pusat Distribusi");
   assert.equal(new Set(stages.map((s) => s.motif)).size, 10);
-  assert.equal(new Set(stages.map((s) => s.accent)).size, 10);
+  assert.ok(new Set(stages.map((s) => s.accent)).size >= 10);
 });
 
 test("result validation retains fractional hint scores and the new maximum", () => {

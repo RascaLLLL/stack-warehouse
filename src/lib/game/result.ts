@@ -14,7 +14,7 @@ export function isGameResult(value: unknown): value is GameResult {
     typeof r.completedStages === "number" &&
     Number.isInteger(r.completedStages) &&
     r.completedStages >= 0 &&
-    r.completedStages <= 10 &&
+    r.completedStages <= 20 &&
     typeof r.completedAt === "string" &&
     !Number.isNaN(Date.parse(r.completedAt))
   );

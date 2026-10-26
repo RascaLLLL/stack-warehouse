@@ -24,11 +24,11 @@ export default function Home() {
             <br />
             <span>WAREHOUSE</span>
           </h1>
-          <div className="hero-subtitle">THE LIFO CHALLENGE</div>
+          <div className="hero-subtitle">PETUALANGAN STACK & QUEUE</div>
           <p className="hero-description">
             Selamat datang di <strong>Stack Warehouse.</strong> Susun peti, atur
-            pengiriman, dan kuasai konsep <strong>stack</strong> lewat tantangan
-            gudang.
+            pengiriman, dan kuasai konsep <strong>stack dan queue</strong> lewat
+            tantangan gudang.
           </p>
           <div className="hero-buttons">
             <ButtonLink href="/play">
@@ -38,12 +38,12 @@ export default function Home() {
           </div>
           <div className="hero-stats">
             <div>
-              <strong>10</strong>
+              <strong>20</strong>
               <span>Tantangan gudang</span>
             </div>
             <div>
-              <strong>3</strong>
-              <span>Operasi utama</span>
+              <strong>2</strong>
+              <span>Zona gudang</span>
             </div>
             <div>
               <strong>∞</strong>
@@ -139,8 +139,9 @@ export default function Home() {
       <div className="foundation-note">
         <span className="status-dot" />
         <p>
-          <strong>Gudang siap dimainkan.</strong> Selesaikan 10 tantangan stack,
-          jalankan operasi nyata, dan kumpulkan skor sebelum waktu habis.
+          <strong>Gudang siap dimainkan.</strong> Selesaikan 10 tantangan Stack
+          dan 10 tantangan Queue, jalankan operasi nyata, dan kumpulkan skor
+          sebelum waktu habis.
         </p>
       </div>
     </div>

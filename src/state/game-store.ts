@@ -27,6 +27,7 @@ type GameState = EngineState & {
   sfxVolume: number;
   savedSession: SavedSession | null;
   runCount: number;
+  oldSaveIncompatible: boolean;
   register: (player: Player) => void;
   reset: () => void;
   toggleSound: () => void;
@@ -48,9 +49,16 @@ export const useGameStore = create<GameState>()(
       sfxVolume: 0.5,
       savedSession: null,
       runCount: 0,
+      oldSaveIncompatible: false,
       register: (player) => {
         if (isPlayer(player))
-          set({ ...initialEngine(), player, result: null, savedSession: null });
+          set({
+            ...initialEngine(),
+            player,
+            result: null,
+            savedSession: null,
+            oldSaveIncompatible: false,
+          });
       },
       reset: () =>
         set({
@@ -58,6 +66,7 @@ export const useGameStore = create<GameState>()(
           player: null,
           result: null,
           savedSession: null,
+          oldSaveIncompatible: false,
         }),
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
       toggleMusic: () =>
@@ -91,6 +100,7 @@ export const useGameStore = create<GameState>()(
           ...engine,
           runCount: attemptNumber,
           result: null,
+          oldSaveIncompatible: false,
           savedSession: {
             bankVersion: BANK_VERSION,
             questionIds: engine.selectedQuestions.map((q) => q.id),
@@ -162,6 +172,9 @@ export const useGameStore = create<GameState>()(
           ),
           ...normalizeAudioPreferences(saved),
           savedSession: recovered ? saved!.savedSession! : null,
+          oldSaveIncompatible: Boolean(
+            player && saved?.savedSession && !recovered,
+          ),
           result:
             recovered &&
             (recovered.gameStatus === "victory" ||

@@ -24,7 +24,8 @@ export function HowToPlay({ small = false }: { small?: boolean }) {
         title="Panduan operator"
       >
         <p className="dialog-intro">
-          Aturan gudang sederhana: peti terakhir masuk akan keluar lebih dulu.
+          Stack mengeluarkan peti terakhir lebih dulu. Queue mengirim paket
+          pertama lebih dulu.
         </p>
         <ol className="how-steps">
           <li>
@@ -40,7 +41,7 @@ export function HowToPlay({ small = false }: { small?: boolean }) {
               <strong>Prediksi lalu jalankan operasi</strong>
               <p>
                 Pilih TOP, telusuri operasi, susun urutan, atau perbaiki kode.
-                Array dan linked list menampilkan stack yang sama.
+                Array dan daftar tertaut menampilkan struktur yang sama.
               </p>
             </div>
           </li>
@@ -53,11 +54,11 @@ export function HowToPlay({ small = false }: { small?: boolean }) {
           </li>
         </ol>
         <p className="form-help">
-          10 ruang, 30 detik per ruang, 3 nyawa. Salah atau waktu habis
-          mengurangi 1 nyawa. Setiap 3 jawaban benar berurutan memulihkan 1
-          nyawa, maksimal 3. Gunakan Jeda untuk menghentikan timer. Tiap run: 3
-          easy (100 poin), 4 medium (150), 3 hard (200). Bonus sisa detik × 2;
-          petunjuk mengurangi 25% poin tahap.
+          20 ruang (10 Stack dan 10 Queue), 30 detik per ruang, 3 nyawa. Salah
+          atau waktu habis mengurangi 1 nyawa. Setiap 3 jawaban benar berurutan
+          memulihkan 1 nyawa, maksimal 3. Gunakan Jeda untuk menghentikan timer.
+          Tiap topik: 3 mudah (100 poin), 4 sedang (150), 3 sulit (200). Bonus
+          sisa detik × 2; petunjuk mengurangi 25% poin tahap.
         </p>
         <Link className="button" href="/play" onClick={() => setOpen(false)}>
           Mulai permainan <ArrowRight size={18} />

@@ -1,7 +1,7 @@
 import type { Question } from "../types/question";
 
 // Plain JSON-compatible data: no functions, JSX, or executable code in the bank.
-export const questionBank: Question[] = [
+const stackQuestionBank: Omit<Question, "questionTopic" | "question">[] = [
   {
     id: "E01",
     topic: "Stack definition",
@@ -911,3 +911,8 @@ export const questionBank: Question[] = [
     selectionPool: "master",
   },
 ];
+export const questionBank: Question[] = stackQuestionBank.map((q) => ({
+  ...q,
+  questionTopic: "stack",
+  question: q.mission,
+}));

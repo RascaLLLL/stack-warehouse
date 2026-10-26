@@ -1,5 +1,8 @@
 # Screenshot checking: separate manual code v1
 
+> Archived Stack-only manual code. Current 20-stage cards use
+> [manual code v2](manual-check-v2.md).
+
 `/cek` is an unlisted, `noindex` local assistant tool. There is no public menu or
 result-page link to it. Images and manual fields stay in tab memory; there is no
 upload, API submission, remote QR service, or localStorage persistence by this

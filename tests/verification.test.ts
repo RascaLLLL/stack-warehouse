@@ -43,7 +43,7 @@ function payload(victory = false) {
     attemptNumber: 2,
     events: [],
   };
-  const rounds = victory ? 10 : 3;
+  const rounds = victory ? 20 : 3;
   for (let i = 0; i < rounds; i++) {
     const q = s.selectedQuestions[s.currentRoom - 1],
       action = {
@@ -64,6 +64,11 @@ function payload(victory = false) {
       };
       saved.events.push(next);
       s = transition(s, next);
+      if (i === 9) {
+        const enter = { type: "enterQueue" as const, now: 3001 + i * 2000 };
+        saved.events.push(enter);
+        s = transition(s, enter);
+      }
     }
   }
   return createResultPayload(saved, {
@@ -161,7 +166,7 @@ test("schema/consistency faults stay INVALID; pixel decode and unreadable files 
     1,
     pixels,
   );
-  assert.equal(inconsistent.status, "INVALID");
+  assert.equal(inconsistent.status, "INVALID", inconsistent.message);
   assert.match(inconsistent.message, /konsisten/);
   const broken = await inspectFile(
     file("broken-pixels.png", png(Uint8Array.of(1, 2, 3))),
@@ -200,7 +205,7 @@ test("schema/consistency faults stay INVALID; pixel decode and unreadable files 
   const schema = await inspectFile(
     file(
       "schema.png",
-      withRawMetadata({ application: p.application, version: 2 }),
+      withRawMetadata({ application: p.application, version: 3 }),
     ),
     5,
     pixels,
@@ -289,6 +294,8 @@ test("manual fields normalize canonically, and shared screenshot codes match the
     className: " TI-2A ",
     score: "112,5",
     correctAnswers: "01",
+    stackCorrect: "1",
+    queueCorrect: "0",
     hintUsage: "1",
     attemptNumber: "02",
   };
@@ -299,6 +306,8 @@ test("manual fields normalize canonically, and shared screenshot codes match the
     className: "TI-2A",
     score: 112.5,
     correctAnswers: 1,
+    stackCorrect: 1,
+    queueCorrect: 0,
     hintUsage: 1,
     attemptNumber: 2,
   });
@@ -327,6 +336,8 @@ test("manual checks reject missing, malformed, fractional count, out-of-range an
     className: "TI-2A",
     score: "100",
     correctAnswers: "1",
+    stackCorrect: "1",
+    queueCorrect: "0",
     hintUsage: "0",
     attemptNumber: "1",
   };
@@ -337,15 +348,15 @@ test("manual checks reject missing, malformed, fractional count, out-of-range an
     { score: "NaN" },
     { score: "2,100.5" },
     { score: "100.25" },
-    { correctAnswers: "11" },
+    { correctAnswers: "21" },
     { correctAnswers: "1.5" },
     { hintUsage: "100" },
     { attemptNumber: "0" },
     { attemptNumber: "9007199254740992" },
   ])
     assert.throws(() => normalizeManualFields({ ...input, ...patch }));
-  assert.throws(() => checkManual(input, "SW2-1234-5678"), /checksum PNG/);
-  assert.throws(() => checkManual(input, ""), /SWM1/);
+  assert.throws(() => checkManual(input, "SW3-1234-5678"), /checksum PNG/);
+  assert.throws(() => checkManual(input, ""), /SWM2/);
   assert.throws(
     () =>
       normalizeManualFields({ ...input, score: "100", correctAnswers: "0" }),

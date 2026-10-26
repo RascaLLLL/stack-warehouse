@@ -27,14 +27,17 @@ export function WarehouseEnvironment({ room }: { room: WarehouseRoom }) {
   const Icon = icons[room.motif];
   return (
     <section
-      className={`warehouse-environment room-${room.motif}`}
+      className={`warehouse-environment room-${room.motif} ${room.id > 10 ? "zone-queue" : "zone-stack"}`}
       style={{ "--room-accent": room.accent } as React.CSSProperties}
       aria-label={`Lingkungan ${room.title}`}
     >
       <div className="room-sign">
         <Icon size={40} />
         <div>
-          <span>ZONE {String(room.id).padStart(2, "0")}</span>
+          <span>
+            {room.id > 10 ? "ZONA LOGISTIK" : "ZONA PENYIMPANAN"} ·{" "}
+            {String(room.id).padStart(2, "0")}
+          </span>
           <h2>{room.title}</h2>
           <p>{room.description}</p>
         </div>
@@ -50,11 +53,17 @@ export function WarehouseEnvironment({ room }: { room: WarehouseRoom }) {
               <span>
                 {room.motif === "array"
                   ? `[${i + 1}]`
-                  : room.motif === "links"
-                    ? `${i + 1} →`
-                    : room.motif === "inventory"
-                      ? `#00${i + 1}`
-                      : "▣"}
+                  : room.id > 10
+                    ? i === 0
+                      ? "HEAD"
+                      : i === 4
+                        ? "TAIL"
+                        : "▰ →"
+                    : room.motif === "links"
+                      ? `${i + 1} →`
+                      : room.motif === "inventory"
+                        ? `#00${i + 1}`
+                        : "▣"}
               </span>
             </div>
           ),

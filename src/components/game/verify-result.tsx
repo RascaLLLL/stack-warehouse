@@ -32,6 +32,18 @@ const manualFields = [
   {
     name: "correctAnswers",
     label: "Jumlah benar",
+    placeholder: "0–20",
+    mode: "numeric",
+  },
+  {
+    name: "stackCorrect",
+    label: "Benar Stack",
+    placeholder: "0–10",
+    mode: "numeric",
+  },
+  {
+    name: "queueCorrect",
+    label: "Benar Queue",
     placeholder: "0–10",
     mode: "numeric",
   },
@@ -47,7 +59,7 @@ const manualFields = [
     placeholder: "Contoh: 2",
     mode: "numeric",
   },
-  { name: "code", label: "Kode verifikasi", placeholder: "SWM1-XXXX-XXXX" },
+  { name: "code", label: "Kode verifikasi", placeholder: "SWM2-XXXX-XXXX" },
 ] as const;
 const statusClass = {
   "VALID FORMAT": "valid",
@@ -156,7 +168,7 @@ export function VerifyResult() {
       <section className="check-panel" aria-labelledby="batch-title">
         <div className="check-section-top">
           <h2 id="batch-title">1 · CEK FILE HASIL (BANYAK SEKALIGUS)</h2>
-          <span className="check-chip">PNG / PAYLOAD V2</span>
+          <span className="check-chip">PNG / PAYLOAD V3</span>
         </div>
         <input
           id="batch-files"
@@ -283,6 +295,8 @@ export function VerifyResult() {
                   "NIM",
                   "Kelas",
                   "Skor",
+                  "Benar Stack",
+                  "Benar Queue",
                   "Benar",
                   "Hint",
                   "Percobaan",
@@ -310,6 +324,8 @@ export function VerifyResult() {
                       <td>{r?.player.nim ?? "—"}</td>
                       <td>{r?.player.className ?? "—"}</td>
                       <td className="check-number">{r?.score ?? "—"}</td>
+                      <td className="check-number">{r?.stackCorrect ?? "—"}</td>
+                      <td className="check-number">{r?.queueCorrect ?? "—"}</td>
                       <td className="check-number">
                         {r?.correctAnswers ?? "—"}
                       </td>
@@ -367,7 +383,7 @@ export function VerifyResult() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={10} className="check-empty">
+                  <td colSpan={12} className="check-empty">
                     {rows.length
                       ? "Tidak ada nama atau NIM yang cocok."
                       : "Belum ada file. Pilih PNG hasil praktikan untuk memulai."}
@@ -411,10 +427,10 @@ export function VerifyResult() {
           <ClipboardCheck size={22} />
         </div>
         <p className="check-help">
-          Salin <strong>KODE MANUAL SWM1</strong> pada kartu. Kode PNG SW2
+          Salin <strong>KODE MANUAL SWM2</strong> pada kartu. Kode PNG SW3
           mencakup jurnal lengkap dan tidak dapat diperiksa dari field
-          screenshot saja. Kartu lama yang hanya memiliki SW2 perlu file PNG
-          asli.
+          screenshot saja. Laporan Stack lama tidak didukung sebagai laporan 20
+          ruang.
         </p>
         <form
           onChange={() => setManual(null)}

@@ -8,6 +8,8 @@ import {
   type StepTrace,
 } from "./puzzles";
 import { BANK_VERSION, selectQuestions } from "./questions";
+import { TOTAL_STAGES } from "./questions";
+import { queueFrom, type QueueStep } from "./queue";
 export { CAPACITY, selectQuestions };
 export type { Question };
 import { scoreAnswer } from "./scoring";
@@ -20,6 +22,8 @@ export type OperationRecord = {
   operation: Operation | "TIMEOUT" | "PUZZLE";
   questionId: string;
   trace: StepTrace[];
+  queueTrace: QueueStep[];
+  topic: "stack" | "queue";
   earnedPoints: number;
   before: string[];
   after: string[];
@@ -34,6 +38,17 @@ export type EngineState = {
   currentRoom: number;
   selectedQuestions: Question[];
   stackItems: string[];
+  queueItems: string[];
+  queueHead: number;
+  queueTail: number;
+  currentZone: "stack" | "queue";
+  questionTopic: "stack" | "queue";
+  queueOperationHistory: QueueStep[];
+  stackScore: number;
+  queueScore: number;
+  stackCorrect: number;
+  queueCorrect: number;
+  queueTutorialDone: boolean;
   lives: number;
   score: number;
   remainingTime: number;
@@ -54,6 +69,17 @@ export function initialEngine(): EngineState {
     currentRoom: 1,
     selectedQuestions: [],
     stackItems: [],
+    queueItems: [],
+    queueHead: 0,
+    queueTail: 0,
+    currentZone: "stack",
+    questionTopic: "stack",
+    queueOperationHistory: [],
+    stackScore: 0,
+    queueScore: 0,
+    stackCorrect: 0,
+    queueCorrect: 0,
+    queueTutorialDone: false,
     lives: 3,
     score: 0,
     remainingTime: 30,
@@ -87,6 +113,7 @@ export function startEngine(
     sessionSeed: seed,
     selectedQuestions,
     stackItems: [...selectedQuestions[0].initialStack],
+    queueItems: [],
     gameStatus: "playing",
     deadline: now + STAGE_MS,
   };
@@ -94,7 +121,7 @@ export function startEngine(
 export const attemptKey = (s: EngineState) =>
   `${s.sessionId}:${s.currentRoom}:${s.attempt}`;
 type Action =
-  | { type: "tick" | "pause" | "resume" | "hint"; now: number }
+  | { type: "tick" | "pause" | "resume" | "hint" | "enterQueue"; now: number }
   | { type: "submit"; now: number; key: string; answer: string }
   | { type: "continue"; now: number; key: string };
 function settle(
@@ -103,10 +130,26 @@ function settle(
   answer: string | null,
 ): EngineState {
   const q = s.selectedQuestions[s.currentRoom - 1];
+  const zone = q.questionTopic ?? "stack";
   const result =
     answer === null
-      ? { stack: s.stackItems, output: "timeout", correct: false, trace: [] }
-      : evaluateQuestion(q, answer, s.stackItems);
+      ? {
+          stack: s.stackItems,
+          queueState: {
+            items: s.queueItems,
+            head: s.queueHead,
+            tail: s.queueTail,
+          },
+          queueTrace: [] as QueueStep[],
+          output: "timeout",
+          correct: false,
+          trace: [] as StepTrace[],
+        }
+      : evaluateQuestion(q, answer, s.stackItems, {
+          items: s.queueItems,
+          head: s.queueHead,
+          tail: s.queueTail,
+        });
   const correct = answer !== null && result.correct;
   const remainingTime = Math.max(
     0,
@@ -128,14 +171,22 @@ function settle(
     lives: scoring.lives,
     correctStreak: scoring.correctStreak,
     score: s.score + scoring.points,
+    stackScore: s.stackScore + (zone === "stack" ? scoring.points : 0),
+    queueScore: s.queueScore + (zone === "queue" ? scoring.points : 0),
+    stackCorrect: s.stackCorrect + (correct && zone === "stack" ? 1 : 0),
+    queueCorrect: s.queueCorrect + (correct && zone === "queue" ? 1 : 0),
     remainingTime,
     stackItems: result.stack,
+    queueItems: result.queueState.items,
+    queueHead: result.queueState.head,
+    queueTail: result.queueState.tail,
+    queueOperationHistory: [...s.queueOperationHistory, ...result.queueTrace],
     completedRooms,
     deadline: null,
     gameStatus:
       scoring.lives === 0
         ? "gameOver"
-        : completedRooms.length === 10
+        : completedRooms.length === TOTAL_STAGES
           ? "victory"
           : "playing",
     answerStatus: answer === null ? "timeout" : correct ? "correct" : "wrong",
@@ -153,9 +204,12 @@ function settle(
               : "PUZZLE",
         questionId: q.id,
         trace: result.trace,
+        queueTrace: result.queueTrace,
+        topic: zone,
         earnedPoints: scoring.points,
-        before: [...s.stackItems],
-        after: [...result.stack],
+        before: zone === "queue" ? [...s.queueItems] : [...s.stackItems],
+        after:
+          zone === "queue" ? [...result.queueState.items] : [...result.stack],
         output: result.output,
         answer,
         correct,
@@ -216,11 +270,24 @@ export function transition(s: EngineState, action: Action): EngineState {
         remainingTime: Math.ceil((s.deadline - action.now) / 1000),
       };
     case "resume":
-      return s.gameStatus === "paused"
+      return s.gameStatus === "paused" &&
+        (s.currentRoom !== 11 || s.queueTutorialDone)
         ? {
             ...s,
             gameStatus: "playing",
             deadline: action.now + s.pausedRemainingMs,
+          }
+        : s;
+    case "enterQueue":
+      return s.currentRoom === 11 &&
+        s.gameStatus === "paused" &&
+        !s.queueTutorialDone
+        ? {
+            ...s,
+            queueTutorialDone: true,
+            gameStatus: "playing",
+            deadline: action.now + STAGE_MS,
+            pausedRemainingMs: STAGE_MS,
           }
         : s;
     case "hint":
@@ -237,12 +304,29 @@ export function transition(s: EngineState, action: Action): EngineState {
         ...s,
         currentRoom,
         stackItems: [...s.selectedQuestions[currentRoom - 1].initialStack],
+        queueItems: [
+          ...queueFrom(s.selectedQuestions[currentRoom - 1].initialQueue ?? [])
+            .items,
+        ],
+        queueHead: queueFrom(
+          s.selectedQuestions[currentRoom - 1].initialQueue ?? [],
+        ).head,
+        queueTail: queueFrom(
+          s.selectedQuestions[currentRoom - 1].initialQueue ?? [],
+        ).tail,
+        currentZone:
+          s.selectedQuestions[currentRoom - 1].questionTopic ?? "stack",
+        questionTopic:
+          s.selectedQuestions[currentRoom - 1].questionTopic ?? "stack",
         attempt: s.attempt + 1,
         answerStatus: "pending",
         hintUsed: false,
         remainingTime: 30,
         pausedRemainingMs: STAGE_MS,
         deadline: action.now + STAGE_MS,
+        ...(currentRoom === 11 && !s.queueTutorialDone
+          ? { gameStatus: "paused" as const, deadline: null }
+          : {}),
       };
     }
   }
@@ -279,9 +363,15 @@ export function recoverSession(value: unknown): EngineState | null {
     for (const e of v.events) {
       if (
         !e ||
-        !["tick", "pause", "resume", "hint", "submit", "continue"].includes(
-          e.type,
-        ) ||
+        ![
+          "tick",
+          "pause",
+          "resume",
+          "hint",
+          "enterQueue",
+          "submit",
+          "continue",
+        ].includes(e.type) ||
         !Number.isFinite(e.now) ||
         e.now < last
       )

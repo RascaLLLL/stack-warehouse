@@ -6,11 +6,11 @@ import "@fontsource/press-start-2p/latin-400.css";
 import "./adventure.css";
 export const metadata: Metadata = {
   title: {
-    default: "Stack Warehouse: The LIFO Challenge",
+    default: "Stack Warehouse: Petualangan Stack & Queue",
     template: "%s | Stack Warehouse",
   },
   description:
-    "Belajar struktur data stack melalui tantangan gudang interaktif. Kenali PUSH, POP, PEEK, dan prinsip LIFO.",
+    "Belajar struktur data Stack dan Queue melalui 20 tantangan gudang interaktif.",
 };
 export default function RootLayout({
   children,
@@ -26,11 +26,11 @@ export default function RootLayout({
           <main id="main">{children}</main>
           <footer className="footer shell">
             <span>
-              STACK WAREHOUSE <span className="footer-slash">/</span> THE LIFO
-              CHALLENGE
+              STACK WAREHOUSE <span className="footer-slash">/</span>{" "}
+              PETUALANGAN STACK & QUEUE
             </span>
             <span>Dibuat untuk belajar, satu peti setiap langkah.</span>
-            <span className="version">STACK / LIFO</span>
+            <span className="version">STACK / LIFO · QUEUE / FIFO</span>
           </footer>
         </Providers>
       </body>

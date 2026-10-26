@@ -23,8 +23,16 @@ const submit = (s: EngineState, correct = true) =>
           (a) => a.id !== s.selectedQuestions[s.currentRoom - 1].expectedAnswer,
         )!.id,
   });
-const advance = (s: EngineState) =>
-  transition(s, { type: "continue", key: attemptKey(s), now: 2100 });
+const advance = (s: EngineState) => {
+  const next = transition(s, {
+    type: "continue",
+    key: attemptKey(s),
+    now: 2100,
+  });
+  return next.currentRoom === 11
+    ? transition(next, { type: "enterQueue", now: 2100 })
+    : next;
+};
 test("effects follow committed traces, never replay unchanged or duplicate submissions", () => {
   const s = start(),
     next = submit(s),
@@ -62,10 +70,10 @@ test("life loss, recovery, and terminal cues correspond to actual rules", () => 
   }
   assert.equal(batch.life, "restored");
   assert.equal(batch.heart, 3);
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 17; i++) {
     n = submit(s);
     batch = deriveEffects(s, n)!;
-    assert.equal(batch.cues.includes("victory"), i === 6);
+    assert.equal(batch.cues.includes("victory"), i === 16);
     s = advance(n);
   }
   assert.equal(n.gameStatus, "victory");

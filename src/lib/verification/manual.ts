@@ -10,6 +10,8 @@ export type ManualFields = {
   className: string;
   score: number;
   correctAnswers: number;
+  stackCorrect: number;
+  queueCorrect: number;
   hintUsage: number;
   attemptNumber: number;
 };
@@ -48,6 +50,8 @@ export function normalizeManualFields(value: ManualInput): ManualFields {
     const label = {
       score: "Skor",
       correctAnswers: "Jumlah benar",
+      stackCorrect: "Benar Stack",
+      queueCorrect: "Benar Queue",
       hintUsage: "Hint dipakai",
       attemptNumber: "Percobaan ke-",
       name: "Nama",
@@ -68,12 +72,18 @@ export function normalizeManualFields(value: ManualInput): ManualFields {
     return n;
   };
   const score = number("score", false, 0, MAX_SCORE),
-    correctAnswers = number("correctAnswers", true, 0, 10),
-    hintUsage = number("hintUsage", true, 0, 16),
+    correctAnswers = number("correctAnswers", true, 0, 20),
+    stackCorrect = number("stackCorrect", true, 0, 10),
+    queueCorrect = number("queueCorrect", true, 0, 10),
+    hintUsage = number("hintUsage", true, 0, 32),
     attemptNumber = number("attemptNumber", true, 1, Number.MAX_SAFE_INTEGER);
   if (!Number.isInteger(score * 2) || score > correctAnswers * 260)
     throw new Error(
       "Skor tidak konsisten dengan jumlah benar atau satuan poin .5.",
+    );
+  if (stackCorrect + queueCorrect !== correctAnswers)
+    throw new Error(
+      "Jumlah benar Stack dan Queue harus sama dengan total benar.",
     );
   if (hintUsage > correctAnswers + 3 + Math.floor(correctAnswers / 3))
     throw new Error("Jumlah hint melebihi jumlah percobaan yang mungkin.");
@@ -83,6 +93,8 @@ export function normalizeManualFields(value: ManualInput): ManualFields {
     className,
     score,
     correctAnswers,
+    stackCorrect,
+    queueCorrect,
     hintUsage,
     attemptNumber,
   };
@@ -92,12 +104,12 @@ export function manualVerificationCode(input: ManualInput): string {
   const bytes = new TextEncoder().encode(
     canonicalSerialize({
       application: "id.stackwarehouse.manual",
-      version: 1,
+      version: 2,
       ...fields,
     }),
   );
   const hex = crc32(bytes).toString(16).toUpperCase().padStart(8, "0");
-  return `SWM1-${hex.slice(0, 4)}-${hex.slice(4)}`;
+  return `SWM2-${hex.slice(0, 4)}-${hex.slice(4)}`;
 }
 export function manualFieldsFromReport(report: ResultReport): ManualFields {
   return normalizeManualFields({
@@ -106,6 +118,8 @@ export function manualFieldsFromReport(report: ResultReport): ManualFields {
     className: report.player.className,
     score: report.score,
     correctAnswers: report.correctAnswers,
+    stackCorrect: report.stackCorrect,
+    queueCorrect: report.queueCorrect,
     hintUsage: report.hintUsage,
     attemptNumber: report.attemptNumber,
   });
@@ -116,12 +130,12 @@ export function checkManual(
 ): { matches: boolean; expectedCode: string; fields: ManualFields } {
   const fields = normalizeManualFields(input),
     code = supplied.trim().toUpperCase();
-  if (code.startsWith("SW2-"))
+  if (code.startsWith("SW3-"))
     throw new Error(
-      "SW2 adalah checksum PNG lengkap. Gunakan KODE MANUAL SWM1 pada kartu; SW2 tidak bisa dihitung dari screenshot saja.",
+      "SW3 adalah checksum PNG lengkap. Gunakan KODE MANUAL SWM2 pada kartu; SW3 tidak bisa dihitung dari screenshot saja.",
     );
-  if (!/^SWM1-[A-F0-9]{4}-[A-F0-9]{4}$/.test(code))
-    throw new Error("Kode manual wajib berformat SWM1-XXXX-XXXX.");
+  if (!/^SWM2-[A-F0-9]{4}-[A-F0-9]{4}$/.test(code))
+    throw new Error("Kode manual wajib berformat SWM2-XXXX-XXXX.");
   const expectedCode = manualVerificationCode(fields);
   return { matches: expectedCode === code, expectedCode, fields };
 }

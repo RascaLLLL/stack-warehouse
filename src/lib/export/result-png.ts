@@ -147,7 +147,7 @@ export async function createResultPng(payload: ResultPayload): Promise<Blob> {
     ctx.fillRect(x, 1548, 16, 12);
   }
   text(
-    "LAPORAN SHIFT / THE LIFO CHALLENGE",
+    "STACK WAREHOUSE — STACK & QUEUE ADVENTURE",
     72,
     80,
     20,
@@ -166,12 +166,13 @@ export async function createResultPng(payload: ResultPayload): Promise<Blob> {
     '"Press Start 2P"',
     palette.gold,
   );
+  text("STACK & QUEUE ADVENTURE", 72, 168, 20, palette.cream, "monospace");
   text(
     r.completionStatus === "victory"
-      ? "10 RUANG SELESAI · VICTORY"
-      : "SHIFT BERAKHIR · GAME OVER",
+      ? "20 RUANG SELESAI · MENANG"
+      : "SHIFT BERAKHIR · NYAWA HABIS",
     72,
-    190,
+    202,
     24,
     r.completionStatus === "victory" ? palette.green : palette.red,
     "monospace",
@@ -189,7 +190,7 @@ export async function createResultPng(payload: ResultPayload): Promise<Blob> {
   text("SKOR AKHIR", 72, 576, 20, palette.gold, "monospace");
   text(String(r.score), 72, 612, 86, palette.green, "monospace");
   text(
-    `RUANG ${r.completedRooms.length} / 10`,
+    `RUANG ${r.completedRooms.length} / 20`,
     704,
     606,
     28,
@@ -227,22 +228,38 @@ export async function createResultPng(payload: ResultPayload): Promise<Blob> {
       "monospace",
     );
   });
-  text("WAKTU AKTIF", 72, 994, 18, palette.muted, "monospace");
-  text(formatDuration(r.totalTimeMs), 72, 1020, 30);
-  text("DURASI SESI", 430, 994, 18, palette.muted, "monospace");
-  text(formatDuration(r.wallDurationMs), 430, 1020, 30);
-  text("RUANG SELESAI", 790, 994, 18, palette.muted, "monospace");
-  text(r.completedRooms.join(", ") || "—", 790, 1020, 23);
-  text("SESSION ID", 72, 1080, 18, palette.muted, "monospace");
-  fittedText(ctx, r.sessionId, 72, 1106, 1056, 23, 16, 2, "monospace");
-  text("SELESAI (UTC)", 72, 1180, 18, palette.muted, "monospace");
-  text(r.completedAt, 72, 1206, 22, palette.cream, "monospace");
-  text("KODE MANUAL / SCREENSHOT", 72, 1250, 18, palette.gold, "monospace");
+  [
+    ["STACK PERFORMANCE", r.stackScore, r.stackCorrect],
+    ["QUEUE PERFORMANCE", r.queueScore, r.queueCorrect],
+  ].forEach(([label, score, correct], i) => {
+    const x = 72 + i * 544;
+    ctx.fillStyle = palette.panel;
+    ctx.fillRect(x, 982, 520, 126);
+    text(
+      String(label),
+      x + 16,
+      999,
+      19,
+      i ? palette.green : palette.gold,
+      "monospace",
+    );
+    text(`${score} POIN`, x + 16, 1034, 32, palette.cream, "monospace");
+    text(`${correct}/10 BENAR`, x + 16, 1073, 22, palette.muted, "monospace");
+  });
+  text("WAKTU AKTIF", 72, 1132, 18, palette.muted, "monospace");
+  text(formatDuration(r.totalTimeMs), 72, 1158, 28);
+  text("DURASI SESI", 430, 1132, 18, palette.muted, "monospace");
+  text(formatDuration(r.wallDurationMs), 430, 1158, 28);
+  text("SESSION ID", 72, 1210, 18, palette.muted, "monospace");
+  fittedText(ctx, r.sessionId, 72, 1236, 700, 22, 16, 2, "monospace");
+  text("SELESAI (UTC)", 72, 1295, 18, palette.muted, "monospace");
+  text(r.completedAt, 72, 1321, 20, palette.cream, "monospace");
+  text("KODE MANUAL / SCREENSHOT", 72, 1368, 18, palette.gold, "monospace");
   fittedText(
     ctx,
     manualVerificationCode(manualFieldsFromReport(r)),
     72,
-    1278,
+    1395,
     700,
     32,
     26,
@@ -250,12 +267,12 @@ export async function createResultPng(payload: ResultPayload): Promise<Blob> {
     "monospace",
     palette.gold,
   );
-  text("KODE PNG / PAYLOAD LENGKAP", 72, 1340, 18, palette.muted, "monospace");
+  text("KODE PNG / PAYLOAD LENGKAP", 72, 1440, 18, palette.muted, "monospace");
   fittedText(
     ctx,
     payload.verificationCode,
     72,
-    1366,
+    1465,
     700,
     26,
     22,
@@ -264,27 +281,18 @@ export async function createResultPng(payload: ResultPayload): Promise<Blob> {
     palette.gold,
   );
   if (qr.width > 300) throw new Error("Ringkasan QR terlalu besar.");
-  ctx.drawImage(qr, 1140 - qr.width, 1176);
+  ctx.drawImage(qr, 1140 - qr.width, 1190);
   fittedText(
     ctx,
     "Checksum memeriksa integritas dan konsistensi data lokal. Bukan bukti keaslian skor atau identitas.",
     72,
-    1410,
+    1505,
     700,
-    18,
-    16,
-    4,
+    14,
+    14,
+    2,
     "Arial",
     palette.muted,
-  );
-  text("QR: RINGKASAN LOKAL", 840, 1492, 16, palette.muted, "monospace");
-  text(
-    "PAYLOAD V2 · PNG 1200 × 1600 · STACK WAREHOUSE",
-    72,
-    1510,
-    17,
-    palette.gold,
-    "monospace",
   );
   const raw = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(

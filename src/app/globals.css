@@ -2431,3 +2431,177 @@ html[data-effects-visible="false"] .time-danger strong {
     padding: 14px 12px;
   }
 }
+/* Jalur logistik memakai ukuran sel responsif dan tidak mendorong lebar halaman. */
+.queue-visualization {
+  min-width: 0;
+  padding: 16px 4px;
+}
+.queue-directions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #8ccb9e;
+  font: 10px var(--font-mono);
+  margin-bottom: 12px;
+}
+.queue-lane {
+  position: relative;
+  border: 4px solid #587f85;
+  background: repeating-linear-gradient(
+    90deg,
+    #243e4b 0 24px,
+    #2c5260 24px 30px
+  );
+  padding: 12px 8px;
+  min-height: 116px;
+}
+.queue-departing {
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  top: 26px;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: #966238;
+  border: 3px solid #eab45a;
+  color: #fff6dc;
+  font: 14px var(--pixel-font);
+  animation: queue-depart 0.7s steps(6, end) forwards;
+  pointer-events: none;
+}
+@keyframes queue-depart {
+  to {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+}
+.queue-cells,
+.queue-nodes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+.queue-nodes {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.queue-cell,
+.queue-node {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  gap: 5px;
+  min-width: 0;
+}
+.queue-cell small,
+.queue-node small {
+  min-height: 22px;
+  font: 9px/1.3 var(--font-mono);
+  color: #f4eedf;
+  overflow-wrap: anywhere;
+}
+.queue-package,
+.queue-empty {
+  display: grid;
+  place-items: center;
+  height: 54px;
+  border: 3px solid #eab45a;
+  background: #966238;
+  color: #fff6dc;
+  font: 14px var(--pixel-font);
+  box-shadow: 4px 4px 0 #101b2a;
+  animation: queue-arrive 0.35s steps(4, end);
+}
+.queue-empty {
+  background: #243e4b;
+  border-color: #587f85;
+  color: #9baeb8;
+}
+.queue-empty-lane {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 34px 5px;
+  color: #f4eedf;
+}
+.queue-readout,
+.queue-action {
+  color: #f4eedf;
+  font: 12px/1.5 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.queue-action {
+  color: #8ccb9e;
+  animation: queue-arrive 0.5s steps(5, end);
+}
+@keyframes queue-arrive {
+  from {
+    opacity: 0.35;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.queue-tutorial-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #08121ee8;
+}
+.queue-tutorial {
+  width: min(540px, 100%);
+  padding: 28px;
+  border-color: #64d4cf;
+  animation: queue-arrive 0.7s steps(7, end);
+}
+.queue-tutorial h2 {
+  color: #64d4cf;
+}
+.queue-door {
+  font: 32px var(--pixel-font);
+  color: #eab45a;
+  margin-bottom: 20px;
+}
+.warehouse-environment.zone-queue {
+  background: linear-gradient(120deg, #122b3b, #1a4751 58%, #1b2d3f);
+  border-color: #64d4cf;
+}
+.warehouse-environment.zone-queue .room-fixture {
+  background: #3e7980;
+  border-color: #9de6d8;
+}
+@media (max-width: 600px) {
+  .queue-cells,
+  .queue-nodes {
+    gap: 3px;
+  }
+  .queue-package,
+  .queue-empty {
+    height: 42px;
+    font-size: 10px;
+  }
+  .queue-cell small,
+  .queue-node small {
+    font-size: 8px;
+  }
+  .queue-directions {
+    font-size: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .queue-package,
+  .queue-action,
+  .queue-tutorial,
+  .queue-departing {
+    animation: none;
+  }
+  .queue-departing {
+    display: none;
+  }
+}

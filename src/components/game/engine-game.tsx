@@ -9,6 +9,8 @@ import Link from "next/link";
 import { PuzzleControls } from "./puzzle-controls";
 import { WarehouseEnvironment } from "@/components/warehouse/warehouse-environment";
 import { AnimatedStack } from "@/components/warehouse/animated-stack";
+import { QueueVisualization } from "@/components/warehouse/queue-visualization";
+import { TOTAL_STAGES } from "@/lib/game/questions";
 import { WorkerReaction } from "@/components/warehouse/worker-reaction";
 import { DoorArrival, PixelCelebration, EndScene } from "./pixel-effects";
 import { useEffectsStore } from "@/state/effects-store";
@@ -21,6 +23,7 @@ export function EngineGame() {
   const terminal = s.gameStatus === "victory" || s.gameStatus === "gameOver";
   const q = s.selectedQuestions[s.currentRoom - 1];
   const stage = stages[s.currentRoom - 1];
+  const isQueue = s.currentZone === "queue";
   const last = s.operationHistory.at(-1);
   const feedback = s.answerStatus !== "pending" && last?.questionId === q?.id;
   const batch = useEffectsStore((s) => s.batch);
@@ -55,16 +58,24 @@ export function EngineGame() {
           score: s.score,
           elapsedSeconds: s.remainingTime,
           completedStages: s.completedRooms.length,
-          totalStages: 10,
+          totalStages: TOTAL_STAGES,
         }}
       />
       {s.gameStatus === "idle" ? (
         <section className="pixel-panel engine-panel">
           <h2>Siap bertugas?</h2>
+          {s.oldSaveIncompatible && (
+            <p role="status">
+              Sesi lama berisi 10 ruang Stack dan tidak dapat dilanjutkan
+              sebagai petualangan 20 ruang. Mulai sesi baru untuk bermain Stack
+              dan Queue. Laporan lama tetap tersimpan di browser.
+            </p>
+          )}
           <p>
-            10 ruang, 3 nyawa, 30 detik per ruang. Setiap 3 jawaban benar
-            berurutan memulihkan 1 nyawa (maksimal 3). Salah atau waktu habis
-            mengurangi 1 nyawa; ulangi ruang sampai benar.
+            20 ruang: 10 Stack lalu 10 Queue. Tiga nyawa, 30 detik per ruang.
+            Setiap 3 jawaban benar berurutan memulihkan 1 nyawa (maksimal 3).
+            Salah atau waktu habis mengurangi 1 nyawa; ulangi ruang sampai
+            benar.
           </p>
           <button className="button" onClick={s.start}>
             Mulai permainan
@@ -72,6 +83,37 @@ export function EngineGame() {
         </section>
       ) : (
         <>
+          {s.currentRoom === 11 && !s.queueTutorialDone && (
+            <div
+              className="queue-tutorial-backdrop"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Pengenalan Queue Logistics"
+            >
+              <div className="queue-tutorial pixel-panel">
+                <div className="queue-door" aria-hidden="true">
+                  ▥ → 🚚
+                </div>
+                <div className="eyebrow">ZONA BARU TERBUKA</div>
+                <h2>Logistik Queue</h2>
+                <p>
+                  <strong>Stack:</strong> terakhir masuk, pertama keluar (LIFO).
+                </p>
+                <p>
+                  <strong>Queue:</strong> pertama masuk, pertama keluar (FIFO).
+                  Paket baru masuk di TAIL; truk mengambil dari HEAD.
+                </p>
+                <button
+                  className="button"
+                  onClick={() =>
+                    s.dispatch({ type: "enterQueue", now: Date.now() })
+                  }
+                >
+                  Buka jalur pengiriman
+                </button>
+              </div>
+            </div>
+          )}
           <div className="room-environment-wrap">
             <WarehouseEnvironment room={stage} />
             {entry === `${s.sessionId}:${s.currentRoom}:${s.attempt}:enter` && (
@@ -88,12 +130,17 @@ export function EngineGame() {
           >
             <section
               className="pixel-panel engine-panel"
-              aria-label="Visualisasi stack aktual"
+              aria-label={
+                isQueue
+                  ? "Visualisasi queue aktual"
+                  : "Visualisasi stack aktual"
+              }
             >
               <div className="panel-kicker">
-                STACK AKTUAL{" "}
+                {isQueue ? "QUEUE AKTUAL" : "STACK AKTUAL"}{" "}
                 <span>
-                  {s.stackItems.length}/{CAPACITY} PETI
+                  {isQueue ? s.queueItems.length : s.stackItems.length}/
+                  {CAPACITY} PETI
                 </span>
               </div>
               <div className="engine-buttons">
@@ -109,7 +156,7 @@ export function EngineGame() {
                   aria-pressed={mode === "linked"}
                   onClick={() => setMode("linked")}
                 >
-                  Linked list
+                  Daftar tertaut
                 </button>
               </div>
               <WorkerReaction
@@ -122,12 +169,24 @@ export function EngineGame() {
                     : null
                 }
               />
-              <AnimatedStack
-                key={`${key}:${event?.key ?? "static"}`}
-                stack={s.stackItems}
-                mode={mode}
-                event={event?.record ?? null}
-              />
+              {isQueue ? (
+                <QueueVisualization
+                  items={s.queueItems}
+                  head={s.queueHead}
+                  tail={s.queueTail}
+                  mode={mode}
+                  last={
+                    last?.questionId === q.id ? last.queueTrace.at(-1) : null
+                  }
+                />
+              ) : (
+                <AnimatedStack
+                  key={`${key}:${event?.key ?? "static"}`}
+                  stack={s.stackItems}
+                  mode={mode}
+                  event={event?.record ?? null}
+                />
+              )}
               {last?.questionId === q.id && (
                 <div className="operation-feedback" aria-live="polite">
                   <strong>
@@ -136,11 +195,21 @@ export function EngineGame() {
                   <p>
                     [{last.before.join(", ")}] → [{last.after.join(", ")}]
                   </p>
-                  <p>
-                    TOP array: {last.before.length} → {last.after.length}; TOP
-                    pointer: {linkedStack(last.before).TOP ?? "null"} →{" "}
-                    {linkedStack(last.after).TOP ?? "null"}
-                  </p>
+                  {!isQueue && (
+                    <p>
+                      TOP array: {last.before.length} → {last.after.length}; TOP
+                      pointer: {linkedStack(last.before).TOP ?? "null"} →{" "}
+                      {linkedStack(last.after).TOP ?? "null"}
+                    </p>
+                  )}
+                  {isQueue && (
+                    <p>
+                      HEAD: {last.queueTrace[0]?.before.head ?? s.queueHead} →{" "}
+                      {s.queueHead}; TAIL:{" "}
+                      {last.queueTrace[0]?.before.tail ?? s.queueTail} →{" "}
+                      {s.queueTail}
+                    </p>
+                  )}
                   <ol>
                     {last.trace.map((step, i) => (
                       <li key={i}>
@@ -153,6 +222,18 @@ export function EngineGame() {
                       </li>
                     ))}
                   </ol>
+                  {isQueue && (
+                    <ol>
+                      {last.queueTrace.map((step, i) => (
+                        <li key={i}>
+                          {step.command.operation}({step.command.value ?? ""}) →{" "}
+                          {step.output}: [{step.before.items.join(", ")}] → [
+                          {step.after.items.join(", ")}]{" "}
+                          {step.shifted ? "· geser ke awal array" : ""}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
                 </div>
               )}
             </section>
@@ -194,11 +275,12 @@ export function EngineGame() {
                   <EndScene victory={s.gameStatus === "victory"} />
                   <h2>
                     {s.gameStatus === "victory"
-                      ? "Kemenangan! 10 ruang selesai."
-                      : "Game over. Nyawa habis."}
+                      ? "Kemenangan! 20 ruang selesai."
+                      : "Permainan berakhir. Nyawa habis."}
                   </h2>
                   <p>
-                    Skor {s.score} · {s.completedRooms.length}/10 ruang selesai.
+                    Skor {s.score} · {s.completedRooms.length}/{TOTAL_STAGES}{" "}
+                    ruang selesai.
                   </p>
                   <div className="engine-buttons">
                     <Link className="button" href="/result">
@@ -216,13 +298,17 @@ export function EngineGame() {
                 <>
                   <div className="panel-kicker">
                     MISI RUANG {s.currentRoom}
-                    <span>{q.puzzleType}</span>
+                    <span>{isQueue ? "ANTREAN" : "TUMPUKAN"}</span>
                   </div>
                   <h2>{q.title}</h2>
                   <p>{q.mission}</p>
                   <p className="form-help">
-                    {q.difficulty.toUpperCase()} · {q.basePoints} poin + sisa
-                    detik × 2 · {q.topic}
+                    {
+                      { easy: "MUDAH", medium: "SEDANG", hard: "SULIT" }[
+                        q.difficulty
+                      ]
+                    }{" "}
+                    · {q.basePoints} poin + sisa detik × 2 · {q.topic}
                   </p>
                   <PuzzleControls
                     key={key}

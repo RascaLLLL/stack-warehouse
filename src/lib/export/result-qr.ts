@@ -4,13 +4,17 @@ export function compactQrPayload(p: ResultPayload): string {
   const r = p.report;
   return JSON.stringify({
     app: "SW",
-    v: 2,
+    v: 3,
     code: p.verificationCode,
     data: [
       r.player.name,
       r.player.nim,
       r.player.className,
       r.score,
+      r.stackScore,
+      r.queueScore,
+      r.stackCorrect,
+      r.queueCorrect,
       r.correctAnswers,
       r.incorrectAnswers,
       r.timeoutCount,

@@ -1,5 +1,12 @@
 import type { Question, StackCommand } from "../../types/question";
 import { isEmpty, peek, pop, push, linkedStack } from "./stack";
+import {
+  queueFrom,
+  runQueueProgram,
+  frontQueue,
+  type QueueState,
+  type QueueStep,
+} from "./queue";
 export const CAPACITY = 4;
 export type StepTrace = {
   command: StackCommand;
@@ -73,7 +80,23 @@ export function evaluateQuestion(
   q: Question,
   answer: string,
   initial: readonly string[] = q.initialStack,
+  initialQueue: QueueState = queueFrom(q.initialQueue ?? []),
 ) {
+  if (q.questionTopic === "queue") {
+    const action = q.availableActions.find((a) => a.id === answer);
+    const program =
+      action?.queueProgram ??
+      (action?.queueCommand ? [action.queueCommand] : (q.queueProgram ?? []));
+    const { state, trace } = runQueueProgram(initialQueue, program);
+    return {
+      stack: [...initial],
+      trace: [] as StepTrace[],
+      queueState: state,
+      queueTrace: trace,
+      correct: acceptsAnswer(q, answer) && answer === q.expectedAnswer,
+      output: trace.at(-1)?.output ?? answer,
+    };
+  }
   const action = q.availableActions.find((a) => a.id === answer);
   const sequence =
     q.puzzleType === "arrangeSequence" ? sequenceIds(q, answer) : null;
@@ -93,6 +116,8 @@ export function evaluateQuestion(
       : answer === q.expectedAnswer);
   return {
     ...result,
+    queueState: initialQueue,
+    queueTrace: [] as QueueStep[],
     correct,
     output:
       q.puzzleType === "predictStack" || q.puzzleType === "arrangeSequence"
@@ -101,6 +126,25 @@ export function evaluateQuestion(
   };
 }
 export function computedAnswer(q: Question): string {
+  if (q.questionTopic === "queue") {
+    if (q.puzzleType !== "queuePredict") return q.expectedAnswer;
+    const { state, trace } = runQueueProgram(
+      queueFrom(q.initialQueue ?? []),
+      q.queueProgram ?? [],
+    );
+    switch (q.queueAnswerKind ?? "items") {
+      case "items":
+        return JSON.stringify(state.items);
+      case "front":
+        return frontQueue(state) ?? "NIL";
+      case "tail":
+        return state.items.at(-1) ?? "NIL";
+      case "indices":
+        return `${state.head}-${state.tail}`;
+      case "output":
+        return trace.at(-1)?.output ?? "";
+    }
+  }
   const { stack } = runProgram(q.initialStack, q.program ?? []);
   switch (q.puzzleType) {
     case "selectTop":
@@ -131,6 +175,10 @@ export function validateQuestion(q: Question): string[] {
     "tracePointers",
     "invalidOperation",
     "debugCode",
+    "queueChoice",
+    "queueExecute",
+    "queuePredict",
+    "queueDebug",
   ];
   for (const key of [
     "id",
@@ -152,6 +200,11 @@ export function validateQuestion(q: Question): string[] {
     !q.initialStack.every((v) => typeof v === "string" && v.length > 0)
   )
     errors.push("Invalid initial stack");
+  if (
+    q.questionTopic === "queue" &&
+    (!q.initialQueue || q.initialQueue.length > 4)
+  )
+    errors.push("Invalid initial queue");
   if (
     q.availableActions.length < 2 ||
     new Set(q.availableActions.map((a) => a.id)).size !==
@@ -180,6 +233,12 @@ export function validateQuestion(q: Question): string[] {
     errors.push("Invalid command");
   if (q.availableActions.some((a) => !a.label))
     errors.push("Missing action label");
+  if (
+    q.questionTopic === "queue" &&
+    q.puzzleType === "queueExecute" &&
+    q.availableActions.some((a) => !a.queueCommand)
+  )
+    errors.push("Missing queue command");
   if (!q.coverage.length || !q.coverage.includes(q.topic))
     errors.push("Missing topic coverage");
   const result = evaluateQuestion(q, q.expectedAnswer);

@@ -1,5 +1,8 @@
 # Stack Warehouse result format, version 2
 
+> Archived Stack-only format. The current 20-stage `/cek` reports these PNGs as
+> **UNSUPPORTED**. See [result format v3](result-format-v3.md).
+
 Application identifier: `id.stackwarehouse.result`. PNG keyword:
 `StackWarehouse.Result`. The encoder/decoder is in
 `src/lib/export/png-metadata.ts`; report generation and validation are in

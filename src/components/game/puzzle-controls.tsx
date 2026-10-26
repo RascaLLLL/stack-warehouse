@@ -31,6 +31,16 @@ export function PuzzleControls({
           </code>
         </div>
       )}
+      {q.queueProgram && (
+        <div className="puzzle-program">
+          <span className="hud-label">JEJAK OPERASI QUEUE</span>
+          <code>
+            {q.queueProgram
+              .map((c) => `${c.operation}(${c.value ?? ""})`)
+              .join(" → ")}
+          </code>
+        </div>
+      )}
       {q.code && (
         <pre className="puzzle-code" aria-label="Kode yang perlu diperbaiki">
           {q.code}
@@ -82,13 +92,15 @@ export function PuzzleControls({
           <legend>
             {q.puzzleType === "debugCode"
               ? "Pilih perbaikan kode"
-              : q.puzzleType === "execute"
-                ? "Pilih operasi untuk dijalankan"
-                : q.puzzleType === "invalidOperation"
-                  ? "Pilih operasi yang tidak valid"
-                  : q.puzzleType === "selectTop"
-                    ? "Pilih peti TOP"
-                    : "Pilih hasil yang benar"}
+              : q.puzzleType === "queueExecute"
+                ? "Pilih operasi queue untuk dijalankan"
+                : q.puzzleType === "execute"
+                  ? "Pilih operasi untuk dijalankan"
+                  : q.puzzleType === "invalidOperation"
+                    ? "Pilih operasi yang tidak valid"
+                    : q.puzzleType === "selectTop"
+                      ? "Pilih peti TOP"
+                      : "Pilih hasil yang benar"}
           </legend>
           {q.availableActions.map((a) => (
             <label key={a.id}>
@@ -116,9 +128,11 @@ export function PuzzleControls({
           ? "Jalankan urutan operasi"
           : q.puzzleType === "execute" || q.puzzleType === "invalidOperation"
             ? "Jalankan operasi pilihan"
-            : q.puzzleType === "debugCode"
-              ? "Jalankan perbaikan"
-              : "Kirim jawaban & telusuri"}
+            : q.puzzleType === "queueExecute"
+              ? "Jalankan operasi queue"
+              : q.puzzleType === "debugCode"
+                ? "Jalankan perbaikan"
+                : "Kirim jawaban & telusuri"}
       </button>
     </>
   );

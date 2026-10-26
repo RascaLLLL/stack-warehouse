@@ -197,7 +197,9 @@ export function decodeResultMetadata(png: Uint8Array): ResultPayload {
     )
       throw new PngResultError(
         "UNSUPPORTED",
-        `Versi payload ${p.version} belum didukung (saat ini versi ${RESULT_VERSION}).`,
+        p.version === 2
+          ? "Format lama Stack saja tidak didukung sebagai laporan 20 ruang. Gunakan arsip pemeriksa lama untuk berkas ini."
+          : `Versi payload ${p.version} belum didukung (saat ini versi ${RESULT_VERSION}).`,
       );
     if (
       p.application === RESULT_APPLICATION &&

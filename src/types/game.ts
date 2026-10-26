@@ -13,7 +13,18 @@ export type MissionOutcome = {
   title: string;
   message: string;
 };
-export type StageTopic = "PUSH" | "POP" | "PEEK" | "LIFO" | "KAPASITAS";
+export type StageTopic =
+  | "PUSH"
+  | "POP"
+  | "PEEK"
+  | "LIFO"
+  | "KAPASITAS"
+  | "FIFO"
+  | "ENQUEUE"
+  | "DEQUEUE"
+  | "HEAD"
+  | "TAIL"
+  | "QUEUE ARRAY";
 export type Stage = {
   id: number;
   title: string;

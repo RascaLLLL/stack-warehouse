@@ -1,4 +1,4 @@
-export const MAX_SCORE = 2100; // 3×100 + 4×150 + 3×200 + 10×30×2.
+export const MAX_SCORE = 4200; // Two topics, each 3×100 + 4×150 + 3×200 + 10×30×2.
 export function stagePoints(
   basePoints: number,
   remainingSeconds: number,

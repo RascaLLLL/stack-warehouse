@@ -56,10 +56,12 @@ export function completedSession(victory = false): SavedSession {
     });
   };
   if (victory) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       answer(2000 + i * 2000, true);
-      if (i < 9)
+      if (i < 19) {
         step({ type: "continue", key: attemptKey(s), now: 3000 + i * 2000 });
+        if (i === 9) step({ type: "enterQueue", now: 3001 + i * 2000 });
+      }
     }
   } else {
     step({ type: "hint", now: 1500 });
@@ -119,11 +121,13 @@ test("report regenerates all actual statistics and excludes pause, feedback, lat
     p,
   );
   const victory = createResultPayload(completedSession(true), player);
-  assert.equal(victory.report.correctAnswers, 10);
+  assert.equal(victory.report.correctAnswers, 20);
   assert.equal(victory.report.accuracy, 100);
-  assert.equal(victory.report.completedRooms.length, 10);
+  assert.equal(victory.report.completedRooms.length, 20);
+  assert.equal(victory.report.stackCorrect, 10);
+  assert.equal(victory.report.queueCorrect, 10);
   assert.equal(victory.report.remainingLives, 3);
-  assert.equal(victory.report.totalTimeMs, 10000);
+  assert.equal(victory.report.totalTimeMs, 19999);
   assert.throws(
     () =>
       createResultPayload({ ...completedSession(), startedAt: 1000.5 }, player),
@@ -231,8 +235,8 @@ test("filename and compact QR schema include session, attempt, and visible verif
   });
   assert.equal(resultFilename(p), "StackWarehouse_24001001_Nama_Test_3.png");
   const qr = JSON.parse(compactQrPayload(p));
-  assert.equal(qr.v, 2);
+  assert.equal(qr.v, 3);
   assert.equal(qr.code, p.verificationCode);
-  assert.equal(qr.data[14], p.report.sessionId);
-  assert.equal(qr.data[13], 3);
+  assert.equal(qr.data[18], p.report.sessionId);
+  assert.equal(qr.data[17], 3);
 });

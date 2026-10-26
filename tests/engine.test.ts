@@ -166,14 +166,18 @@ test("wrong answer resets streak, third correct restores life, terminal states f
   assert.equal(lost.lives, 0);
   assert.strictEqual(advance(lost, 10000), lost);
   s = start();
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     s = answer(s, true, 2000 + i * 1000);
-    if (i < 9) s = advance(s, 2100 + i * 1000);
+    if (i < 19) {
+      s = advance(s, 2100 + i * 1000);
+      if (s.currentRoom === 11)
+        s = transition(s, { type: "enterQueue", now: 2100 + i * 1000 });
+    }
   }
   assert.equal(s.gameStatus, "victory");
-  assert.equal(s.completedRooms.length, 10);
-  assert.equal(new Set(s.completedRooms).size, 10);
-  assert.ok(s.score <= 2100);
+  assert.equal(s.completedRooms.length, 20);
+  assert.equal(new Set(s.completedRooms).size, 20);
+  assert.ok(s.score <= 4200);
   assert.strictEqual(advance(s, 20000), s);
 });
 test("refresh replays operations, preserves pause/feedback, catches expired deadline once", () => {

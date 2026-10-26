@@ -8,13 +8,17 @@ import {
 } from "../game/engine";
 import { crc32 } from "./crc32";
 export const RESULT_APPLICATION = "id.stackwarehouse.result" as const;
-export const RESULT_VERSION = 2 as const;
+export const RESULT_VERSION = 3 as const;
 export type ResultReport = {
   player: Player;
   sessionId: string;
   sessionSeed: number;
   attemptNumber: number;
   score: number;
+  stackScore: number;
+  queueScore: number;
+  stackCorrect: number;
+  queueCorrect: number;
   correctAnswers: number;
   incorrectAnswers: number;
   timeoutCount: number;
@@ -27,7 +31,7 @@ export type ResultReport = {
   startedAt: string;
   completedAt: string;
   completionStatus: "victory" | "gameOver";
-  totalStages: 10;
+  totalStages: 20;
 };
 export type ResultPayload = {
   application: typeof RESULT_APPLICATION;
@@ -72,7 +76,7 @@ export function verificationCode(
     .toString(16)
     .toUpperCase()
     .padStart(8, "0");
-  return `SW2-${hex.slice(0, 4)}-${hex.slice(4)}`;
+  return `SW3-${hex.slice(0, 4)}-${hex.slice(4)}`;
 }
 export function createResultPayload(
   saved: SavedSession,
@@ -144,6 +148,10 @@ export function createResultPayload(
     sessionSeed: state.sessionSeed,
     attemptNumber,
     score: state.score,
+    stackScore: state.stackScore,
+    queueScore: state.queueScore,
+    stackCorrect: state.stackCorrect,
+    queueCorrect: state.queueCorrect,
     correctAnswers,
     incorrectAnswers,
     timeoutCount,
@@ -158,7 +166,7 @@ export function createResultPayload(
     startedAt: new Date(saved.startedAt).toISOString(),
     completedAt: new Date(completedTime).toISOString(),
     completionStatus: state.gameStatus,
-    totalStages: 10,
+    totalStages: 20,
   };
   const session: SavedSession = {
     bankVersion: saved.bankVersion,
